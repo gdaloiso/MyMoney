@@ -20,6 +20,20 @@ Costruita con [Expo](https://expo.dev) (SDK 58), React Native e Expo Router.
 - **Backup**: esportazione e importazione CSV dei movimenti (la reimportazione non crea doppioni).
 - Tema chiaro, scuro o automatico.
 
+## Download
+
+Scarica l'ultima versione per **Android** dalla pagina [Releases](https://github.com/gdaloiso/MyMoney/releases/latest): nella sezione *Assets* trovi il file `.apk`.
+
+Per installarlo:
+
+1. Apri il file `.apk` dal telefono.
+2. Se Android lo chiede, consenti l'installazione da questa fonte (*Installa app sconosciute*).
+3. Se Google Play Protect segnala l'app come non verificata, scegli *Installa comunque*: l'app non è pubblicata sul Play Store.
+
+Gli aggiornamenti non sono automatici: per passare a una nuova versione scarica il nuovo `.apk` e installalo sopra quello esistente. I dati e le impostazioni restano.
+
+Per iPhone non c'è un pacchetto scaricabile: si può provare con Expo Go (vedi sotto).
+
 ## Sviluppo
 
 Requisiti: Node.js e npm.
