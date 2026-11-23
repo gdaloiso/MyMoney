@@ -56,6 +56,24 @@ export function nextDate(r: Pick<Recurring, 'startDate' | 'frequency' | 'generat
   return occurrenceDate(r.startDate, r.frequency, r.generatedCount);
 }
 
+/**
+ * Scadenze che cadono nel mese `month` (YYYY-MM) e che non sono ancora state registrate,
+ * cioè con data successiva a `today` (quelle maturate vengono registrate in automatico).
+ */
+export function upcomingInMonth(
+  r: Pick<Recurring, 'startDate' | 'frequency' | 'generatedCount'>,
+  month: string,
+  today: string,
+): string[] {
+  const out: string[] = [];
+  for (let i = r.generatedCount; i < r.generatedCount + 1200; i++) {
+    const date = occurrenceDate(r.startDate, r.frequency, i);
+    if (date.slice(0, 7) > month) break;
+    if (date.slice(0, 7) === month && date > today) out.push(date);
+  }
+  return out;
+}
+
 export function describeRecurrence(r: Pick<Recurring, 'startDate' | 'frequency'>): string {
   const [, m, d] = r.startDate.split('-').map(Number);
   if (r.frequency === 'monthly') return `Ogni mese il ${d}`;

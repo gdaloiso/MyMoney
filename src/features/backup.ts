@@ -42,16 +42,35 @@ export type ImportDeps = {
 const key = (t: { date: string; type: string; amountCents: number; category: string; note: string }) =>
   [t.date, t.type, t.amountCents, t.category, t.note].join('|');
 
+/** Legge il testo del file scelto: prima con `File`, poi con `fetch` (supporta anche content://). */
+async function readPickedText(uri: string): Promise<string> {
+  try {
+    return await new File(uri).text();
+  } catch (firstError) {
+    try {
+      return await (await fetch(uri)).text();
+    } catch {
+      throw firstError;
+    }
+  }
+}
+
 /** Sceglie un file CSV e lo importa. Restituisce null se l'utente annulla. */
 export async function pickAndImportCsv(deps: ImportDeps): Promise<ImportSummary | null> {
-  const res = await DocumentPicker.getDocumentAsync({
-    type: ['text/csv', 'text/comma-separated-values', 'text/plain', 'application/vnd.ms-excel', '*/*'],
-    copyToCacheDirectory: true,
-    multiple: false,
-  });
+  const pick = (copy: boolean) =>
+    DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: copy, multiple: false });
+
+  // Alcuni provider (Telegram, Recenti, Drive) non concedono il permesso di lettura sulla copia
+  // in cache: in quel caso riprovo senza copia e leggo l'URI direttamente.
+  let res: DocumentPicker.DocumentPickerResult;
+  try {
+    res = await pick(true);
+  } catch {
+    res = await pick(false);
+  }
   if (res.canceled) return null;
 
-  const text = await new File(res.assets[0].uri).text();
+  const text = await readPickedText(res.assets[0].uri);
   const { rows, invalid } = parseTransactionsCsv(text);
 
   // Categorie: riuso per nome (e tipo); se non esiste la creo.

@@ -10,10 +10,7 @@ import { useCategories } from '@/features/categories-provider';
 import { useRecurring } from '@/features/recurring-provider';
 import { useTheme } from '@/hooks/use-theme';
 import { formatMoney, parseISODate, toISODate } from '@/lib/format';
-import { nextDate } from '@/lib/recurring';
-
-const MAX_ITEMS = 4;
-const WINDOW_DAYS = 30;
+import { upcomingInMonth } from '@/lib/recurring';
 
 function daysFromToday(iso: string, today: string): number {
   return Math.round((parseISODate(iso).getTime() - parseISODate(today).getTime()) / 86_400_000);
@@ -26,8 +23,11 @@ function whenLabel(days: number, iso: string): string {
   return parseISODate(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
 }
 
-/** Prossime scadenze delle ricorrenze attive. Non appare se non ci sono ricorrenze. */
-export function UpcomingCard() {
+/**
+ * Scadenze delle ricorrenze attive che verranno registrate nel mese `month` (YYYY-MM).
+ * Non appare se nel mese non c'è nulla in arrivo (es. mesi passati o senza ricorrenze).
+ */
+export function UpcomingCard({ month }: { month: string }) {
   const theme = useTheme();
   const { rules } = useRecurring();
   const { getCategory } = useCategories();
@@ -36,18 +36,16 @@ export function UpcomingCard() {
     const today = toISODate(new Date());
     const all = rules
       .filter((r) => r.active)
-      .map((r) => {
-        const date = nextDate(r);
-        return { rule: r, date, days: daysFromToday(date, today) };
-      })
+      .flatMap((r) =>
+        upcomingInMonth(r, month, today).map((date) => ({ rule: r, date, days: daysFromToday(date, today) })),
+      )
       .sort((a, b) => a.date.localeCompare(b.date) || a.rule.id - b.rule.id);
-    const inWindow = all.filter((x) => x.days <= WINDOW_DAYS);
     return {
-      items: all.slice(0, MAX_ITEMS),
-      dueExpenses: inWindow.filter((x) => x.rule.type === 'expense').reduce((s, x) => s + x.rule.amountCents, 0),
-      dueIncome: inWindow.filter((x) => x.rule.type === 'income').reduce((s, x) => s + x.rule.amountCents, 0),
+      items: all,
+      dueExpenses: all.filter((x) => x.rule.type === 'expense').reduce((s, x) => s + x.rule.amountCents, 0),
+      dueIncome: all.filter((x) => x.rule.type === 'income').reduce((s, x) => s + x.rule.amountCents, 0),
     };
-  }, [rules]);
+  }, [rules, month]);
 
   if (items.length === 0) return null;
 
@@ -55,7 +53,7 @@ export function UpcomingCard() {
     <>
       <View style={styles.header}>
         <ThemedText type="smallBold" themeColor="textSecondary" style={styles.title}>
-          PROSSIME SCADENZE
+          PROSSIME SCADENZE DEL MESE
         </ThemedText>
         <Pressable hitSlop={10} onPress={() => router.push('/recurring')}>
           <ThemedText type="smallBold" style={{ color: theme.accent }}>
@@ -70,7 +68,7 @@ export function UpcomingCard() {
           const income = rule.type === 'income';
           return (
             <Pressable
-              key={rule.id}
+              key={`${rule.id}-${date}`}
               onPress={() => router.push({ pathname: '/recurring-form', params: { id: String(rule.id) } })}
               style={({ pressed }) => [
                 styles.row,
@@ -95,18 +93,16 @@ export function UpcomingCard() {
           );
         })}
 
-        {dueExpenses > 0 || dueIncome > 0 ? (
-          <View style={[styles.footer, { borderTopColor: theme.border }]}>
-            <ThemedText type="small" themeColor="textSecondary">
-              Nei prossimi {WINDOW_DAYS} giorni
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {dueExpenses > 0 ? `−${formatMoney(dueExpenses)}` : ''}
-              {dueExpenses > 0 && dueIncome > 0 ? '  ·  ' : ''}
-              {dueIncome > 0 ? `+${formatMoney(dueIncome)}` : ''}
-            </ThemedText>
-          </View>
-        ) : null}
+        <View style={[styles.footer, { borderTopColor: theme.border }]}>
+          <ThemedText type="small" themeColor="textSecondary">
+            Ancora da registrare nel mese
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {dueExpenses > 0 ? `−${formatMoney(dueExpenses)}` : ''}
+            {dueExpenses > 0 && dueIncome > 0 ? '  ·  ' : ''}
+            {dueIncome > 0 ? `+${formatMoney(dueIncome)}` : ''}
+          </ThemedText>
+        </View>
       </Card>
     </>
   );

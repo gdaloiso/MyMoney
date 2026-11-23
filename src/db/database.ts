@@ -172,10 +172,26 @@ export async function updateTransaction(db: SQLiteDatabase, id: number, t: NewTr
   );
 }
 
+/**
+ * Inserimento di massa con INSERT multi-riga (atomico per istruzione). Evita
+ * `withTransactionAsync`: sulla connessione condivisa non è isolato e, se si sovrappone ad
+ * un'altra transazione (es. generateDueRecurring), fallisce con "cannot commit - no
+ * transaction is active". Blocchi da 150 righe × 6 parametri = 900 (< limite 999).
+ */
 export async function insertMany(db: SQLiteDatabase, list: NewTransaction[]) {
-  await db.withTransactionAsync(async () => {
-    for (const t of list) await insertTransaction(db, t);
-  });
+  const CHUNK = 150;
+  for (let i = 0; i < list.length; i += CHUNK) {
+    const part = list.slice(i, i + CHUNK);
+    const params: (string | number | null)[] = [];
+    for (const t of part) {
+      params.push(t.type, t.amountCents, t.category, t.note, t.date, t.recurringId ?? null);
+    }
+    await db.runAsync(
+      'INSERT INTO transactions (type, amount_cents, category, note, date, recurring_id) VALUES ' +
+        part.map(() => '(?, ?, ?, ?, ?, ?)').join(', '),
+      params,
+    );
+  }
 }
 
 export async function deleteAll(db: SQLiteDatabase) {

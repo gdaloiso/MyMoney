@@ -7,8 +7,7 @@ Costruita con [Expo](https://expo.dev) (SDK 58), React Native e Expo Router.
 
 ## Funzionalità
 
-- **Home**: saldo del mese, entrate e uscite, prossime spese ricorrenti in scadenza, aggiunta rapida di un movimento.
-- **Movimenti**: lista raggruppata per mese (con totali) e per giorno, intestazioni dei mesi fisse durante lo scroll.
+- **Home**: selettore del mese con saldo, entrate e uscite, scadenze ricorrenti ancora da registrare nel mese, ricerca/filtri e lista dei movimenti del mese raggruppata per giorno; aggiunta rapida di un movimento.
   Ricerca per nota, categoria o importo; filtri per tipo (entrate/uscite) e per categoria. Tocca per modificare, tieni premuto per eliminare.
 - **Report**:
   - vista *Mese*: risparmio, budget, spese per categoria, andamento degli ultimi 6 mesi;
@@ -77,7 +76,7 @@ precedente devono essere firmati con la stessa chiave.
 
 ```
 src/
-  app/          Schermate (Expo Router): tab Home, Movimenti, Report, Impostazioni; form e schermate secondarie
+  app/          Schermate (Expo Router): tab Home, Report, Impostazioni; form e schermate secondarie
   components/   Componenti condivisi (card, righe movimento, filtri, dashboard annuale, tastierino PIN…)
   features/     Provider di stato (movimenti, categorie, budget, ricorrenze, blocco, impostazioni) e backup CSV
   db/           Accesso al database SQLite

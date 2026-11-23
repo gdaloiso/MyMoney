@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { type ComponentRef, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -45,6 +44,7 @@ export default function AddScreen() {
   const [note, setNote] = useState(editing?.note ?? '');
   const [date, setDate] = useState(editing?.date ?? toISODate(new Date()));
   const [saving, setSaving] = useState(false);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
   const cents = parseAmountToCents(amount);
   const valid = Number.isFinite(cents) && cents > 0;
@@ -101,9 +101,13 @@ export default function AddScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: theme.background }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      behavior="padding">
       <Stack.Screen options={{ title: editing ? 'Modifica movimento' : 'Nuovo movimento' }} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled">
+
         <View style={[styles.segment, { backgroundColor: theme.backgroundElement }]}>
           {(['expense', 'income'] as const).map((tp) => {
             const active = type === tp;
@@ -195,6 +199,8 @@ export default function AddScreen() {
           placeholderTextColor={theme.textSecondary}
           style={[styles.note, { backgroundColor: theme.backgroundElement, color: theme.text }]}
           maxLength={80}
+          // la tastiera riduce lo spazio: porto il campo (e il pulsante) in vista
+          onFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150)}
         />
 
         <Pressable
