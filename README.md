@@ -1,56 +1,79 @@
-# Welcome to your Expo app 👋
+# MyMoney
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App mobile per tenere traccia di entrate e uscite, con budget, spese ricorrenti e report mensili e annuali.
+Tutti i dati restano **solo sul telefono** (database SQLite locale): nessun account, nessun server.
 
-## Get started
+Costruita con [Expo](https://expo.dev) (SDK 58), React Native e Expo Router.
 
-1. Install dependencies
+## Funzionalità
 
-   ```bash
-   npm install
-   ```
+- **Home**: saldo del mese, entrate e uscite, prossime spese ricorrenti in scadenza, aggiunta rapida di un movimento.
+- **Movimenti**: lista raggruppata per mese (con totali) e per giorno, intestazioni dei mesi fisse durante lo scroll.
+  Ricerca per nota, categoria o importo; filtri per tipo (entrate/uscite) e per categoria. Tocca per modificare, tieni premuto per eliminare.
+- **Report**:
+  - vista *Mese*: risparmio, budget, spese per categoria, andamento degli ultimi 6 mesi;
+  - vista *Anno*: saldo annuale, spesa media mensile, confronto con l'anno precedente, mese più caro e migliore, grafico a 12 mesi, spese per categoria.
+- **Budget** mensili per categoria, con avviso quando ti avvicini o superi il limite.
+- **Spese ricorrenti** (affitto, abbonamenti…) che si registrano da sole alla scadenza.
+- **Categorie** personalizzabili (nome, icona, colore).
+- **Sicurezza**: blocco con PIN e sblocco biometrico (Face ID / impronta).
+- **Backup**: esportazione e importazione CSV dei movimenti (la reimportazione non crea doppioni).
+- Tema chiaro, scuro o automatico.
 
-2. Start the app
+## Sviluppo
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Requisiti: Node.js e npm.
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Dal terminale puoi aprire l'app su un emulatore Android, su un simulatore iOS o con [Expo Go](https://expo.dev/go).
 
-### Other setup steps
+Prima di considerare finita una modifica:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```bash
+npx tsc --noEmit   # typecheck
+npx expo lint      # lint
+```
 
-## Learn more
+> Le cartelle `ios/` e `android/` non sono nel repository: vengono generate da Expo (Continuous Native Generation).
+> La configurazione nativa si cambia da `app.json` e dai config plugin, mai a mano.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Generare l'APK
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+La build gira nel cloud con [EAS Build](https://docs.expo.dev/build/introduction/) e serve un account Expo.
 
-## Join the community
+```bash
+npx eas-cli@latest login
+npx eas-cli@latest build -p android --profile preview
+```
 
-Join our community of developers creating universal apps.
+Il profilo `preview` (in `eas.json`) produce un **APK** installabile direttamente: a fine build ottieni un link da aprire
+sul telefono. Il profilo `production` produce invece un `.aab` per il Play Store.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Alla prima build lascia che EAS generi e gestisca la chiave di firma. Gli aggiornamenti installati sopra una versione
+precedente devono essere firmati con la stessa chiave.
+
+- Package Android: `it.gdalo.mymoney`
+- Per reinstallare una build passata: `npx eas-cli@latest build:run -p android`
+
+## Struttura del progetto
+
+```
+src/
+  app/          Schermate (Expo Router): tab Home, Movimenti, Report, Impostazioni; form e schermate secondarie
+  components/   Componenti condivisi (card, righe movimento, filtri, dashboard annuale, tastierino PIN…)
+  features/     Provider di stato (movimenti, categorie, budget, ricorrenze, blocco, impostazioni) e backup CSV
+  db/           Accesso al database SQLite
+  lib/          Logica pura: formattazione, report, filtri, ricorrenze, CSV, categorie, tipi
+  constants/    Tema (colori, spaziature)
+  hooks/        Hook per tema e schema colori
+```
+
+## Note
+
+- I dati non vengono sincronizzati né salvati in cloud. Per cambiare telefono: esporta il CSV dalle Impostazioni,
+  salvalo (Drive, e-mail…) e importalo sul nuovo dispositivo. Il CSV contiene solo i movimenti: budget e ricorrenze vanno reimpostati.
+- Se disinstalli l'app perdi i dati: fai un'esportazione CSV prima.
